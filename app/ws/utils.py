@@ -46,7 +46,7 @@ from lxml import etree
 from mzml2isa.parsing import convert as isa_convert
 from pandas import Series
 from psycopg2 import pool
-
+from dirsync import sync
 from app.ws.mm_models import OntologyAnnotation
 
 """
@@ -158,23 +158,14 @@ def copytree(src, dst, symlinks=False, ignore=None, include_raw_data=False, incl
                     copy_file(source, destination)
             else:
                 if include_raw_data:
-                    try:
-                        time_diff = os.stat(source).st_ctime - os.stat(destination).st_ctime
-                    except FileNotFoundError as e:
-                        time_diff = 1  # Destination folder does not exist
-                        logger.error('Error copying file %s to %s. Error %s', source, destination, str(e))
-
-                    # if os.path.isdir(destination):
-                    #     pass  # We already have this folder
-
-                    if int(time_diff) >= 1:
-                        # ToDo, rsync all (non-metadata) files
-                        file_list = {source, destination}
-
                         if os.path.isdir(source):
                             logger.info(source + ' is a directory')
                             try:
-                                shutil.copytree(source, destination, symlinks=symlinks, ignore=ignore)
+                                if os.path.isdir(destination):
+                                    sync(source, destination, 'sync', purge=False,logger=logger)
+                                else:
+                                    shutil.copytree(source, destination, symlinks=symlinks, ignore=ignore)
+                                logger.info('Copied file %s to %s', source, destination)
                             except OSError as e:
                                 logger.error('Does the folder already exists? Can not copy %s to %s', source,
                                              destination, str(e))
@@ -187,7 +178,10 @@ def copytree(src, dst, symlinks=False, ignore=None, include_raw_data=False, incl
                         else:  # elif not os.path.exists(destination):
                             logger.info(source + ' is not a directory')
                             try:
-                                shutil.copy2(source, destination)  # Should retain all file metadata, ie. timestamps
+                                if os.path.isfile(destination):
+                                    sync(source, destination, 'sync', purge=False,logger=logger)
+                                else:
+                                    shutil.copy2(source, destination)  # Should retain all file metadata, ie. timestamps
                                 logger.info('Copied file %s to %s', source, destination)
                             except OSError as e:
                                 logger.error('Does the file already exists? Can not copy %s to %s', source, destination,
@@ -196,8 +190,6 @@ def copytree(src, dst, symlinks=False, ignore=None, include_raw_data=False, incl
                                 logger.error('File already exists! Can not copy %s to %s', source, destination, str(e))
                             except Exception as e:
                                 logger.error('Other error! Can not copy %s to %s', source, destination, str(e))
-                    else:
-                        logger.info("Newer file already exists. Will not copy '%s' to '%s'", source, destination)
     except Exception as e:
         logger.error(str(e))
         raise
@@ -1476,3 +1468,4 @@ def getFileList(studyID):
     except Exception as e:
         print(e)
         logger.info(e)
+
