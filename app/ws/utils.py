@@ -1160,7 +1160,7 @@ def clean_json(json_data, studyID):
     :return: removed json file
     '''
 
-    json_data['updated_at'] = datetime.datetime.today().strftime('%Y-%m-%json_data')
+    json_data['updated_at'] = datetime.datetime.today().strftime('%Y-%m-%d')
 
     # techniques
     tech = json_data['data']['techniques'].copy()
@@ -1211,6 +1211,7 @@ def clean_json(json_data, studyID):
 
 
 def get_techniques(studyID=None):
+    print('getting techniques.... ')
     params = app.config.get('DB_PARAMS')
 
     if studyID != None:
@@ -1238,6 +1239,7 @@ def get_techniques(studyID=None):
 
 
 def get_instrument(studyID, assay_name):
+    # print('getting instruments')
     instrument_name = []
     # res.loc[len(res)] = [sheet_name, key, term]
     try:
@@ -1262,6 +1264,7 @@ def get_instrument(studyID, assay_name):
 
 
 def get_orgaisms(studyID, sample_file_name):
+    # print('getting organism')
     try:
         source = '/metabolights/ws/studies/{study_id}/sample'.format(study_id=studyID)
         ws_url = 'http://wp-p3s-15.ebi.ac.uk:5000' + source
@@ -1291,6 +1294,7 @@ def get_orgaisms(studyID, sample_file_name):
 
 
 def get_studytype(studyID=None):
+    print('getting study types ... ')
     study_type = {"targeted": [],
                   "untargeted": [],
                   "targeted_untargeted": []}

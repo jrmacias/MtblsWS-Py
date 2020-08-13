@@ -425,21 +425,22 @@ class reports(Resource):
             else:
                 # techniques
                 techs = get_techniques()
-                j_data['data']['techniques'] = techs
+                j_data['data']['techniques'] = techs['techniques']
 
                 # study_type
                 types = get_studytype()
-                j_data['data']['study_type'] = types
+                j_data['data']['study_type'] = types['study_type']
 
                 # instruments & organisms
                 i, s = get_instruments_organism()
-                j_data['data']['instruments'] = i
-                j_data['data']['organisms'] = s
+                j_data['data']['instruments'] = i['instruments']
+                j_data['data']['organisms'] = s['organisms']
 
                 j_data["updated_at"] = datetime.today().strftime('%Y-%m-%d')
 
-                res = j_data
+            res = j_data
 
         # j_res = json.dumps(res,indent=4)
         writeDataToFile(reporting_path + file_name, res, True)
-        return jsonify(res)
+
+        return jsonify({"POST " + file_name : True})
