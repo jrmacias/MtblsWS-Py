@@ -1147,9 +1147,15 @@ def writeDataToFile(filename, data, pretty=False):
 
 
 def readDatafromFile(fileName):
-    with open(fileName, "r", encoding='utf-8') as read_file:
-        data = json.load(read_file)
-    return data
+    try:
+        logger.info(fileName)
+        with open(fileName, "r", encoding='utf-8') as read_file:
+            data = json.load(read_file)
+            logger.info(len(data))
+        return data
+
+    except Exception as e:
+        logger.info(e)
 
 
 def clean_json(json_data, studyID):

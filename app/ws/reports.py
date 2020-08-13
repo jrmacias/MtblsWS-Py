@@ -49,7 +49,7 @@ class reports(Resource):
                 "allowEmptyValue": False,
                 "paramType": "query",
                 "dataType": "string",
-                "enum": ["daily_stats", "user_stats"]
+                "enum": ["daily_stats", "user_stats","global"]
             },
 
             {
@@ -191,6 +191,10 @@ class reports(Resource):
 
         elif query == 'user_stats':
             file_name = 'user_report.json'
+            j_file = readDatafromFile(reporting_path + file_name)
+            return jsonify(j_file)
+        elif query == 'global':
+            file_name = 'global.json'
             j_file = readDatafromFile(reporting_path + file_name)
             return jsonify(j_file)
         else:
