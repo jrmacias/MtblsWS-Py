@@ -106,6 +106,7 @@ class curation_log(Resource):
             wsc.get_permissions('MTBLS1', user_token)
 
         user_name = get_username_by_token(user_token)
+        user_email = get_email_by_token(user_token)
 
         if not write_access:
             abort(403)
