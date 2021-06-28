@@ -153,6 +153,7 @@ class IsaApiClient:
             std_path = study_location
 
         try:
+            logger.info('Attempting to load investigation file for study {0} from {1}'.format(study_id, std_path))
             i_filename = glob.glob(os.path.join(std_path, "i_*.txt"))[0]
             fp = open(i_filename, encoding='utf-8', errors='ignore')
             # loading tables also load Samples and Assays
