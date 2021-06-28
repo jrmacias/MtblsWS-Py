@@ -154,7 +154,11 @@ class IsaApiClient:
 
         try:
             logger.info('Attempting to load investigation file for study {0} from {1}'.format(study_id, std_path))
-            i_filename = glob.glob(os.path.join(std_path, "i_*.txt"))[0]
+            try:
+                i_filename = glob.glob(os.path.join(std_path, "i_*.txt"))[0]
+            except IndexError as e:
+                logger.info('The original filepath for i_Investigation.txt didnt work: {0} . Trying new path.'.format(std_path))
+                i_filename = glob.glob(os.path.join(std_path, "/i_*.txt"))[0]
             fp = open(i_filename, encoding='utf-8', errors='ignore')
             # loading tables also load Samples and Assays
             isa_inv = load(fp, skip_load_tables)
