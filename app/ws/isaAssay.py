@@ -362,6 +362,7 @@ class StudyAssay(Resource):
             return extended_response(data={'assays': sch.dump(found).data})
         except Exception as e:
             logger.error('Problem retrieving assay sheets: {0}'.format(e))
+            abort(500)
 
     @swagger.operation(
         summary='Add a new assay',
