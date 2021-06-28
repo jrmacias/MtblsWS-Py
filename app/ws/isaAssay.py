@@ -323,42 +323,45 @@ class StudyAssay(Resource):
         if 'user_token' in request.headers:
             user_token = request.headers['user_token']
         # query validation
-        parser = reqparse.RequestParser()
-        parser.add_argument('filename', help='Assay filename')
-        filename = None
-        parser.add_argument('list_only', help='List names only')
-        list_only = True
-        if request.args:
-            args = parser.parse_args(req=request)
-            filename = args['filename'].lower() if args['filename'] else None
-            list_only = True if args['list_only'].lower() == 'true' else False
+        try:
+            parser = reqparse.RequestParser()
+            parser.add_argument('filename', help='Assay filename')
+            filename = None
+            parser.add_argument('list_only', help='List names only')
+            list_only = True
+            if request.args:
+                args = parser.parse_args(req=request)
+                filename = args['filename'].lower() if args['filename'] else None
+                list_only = True if args['list_only'].lower() == 'true' else False
 
-        logger.info('Getting Assay %s for %s', filename, study_id)
-        # check for access rights
-        is_curator, read_access, write_access, obfuscation_code, study_location, release_date, submission_date, \
-            study_status = wsc.get_permissions(study_id, user_token)
-        if not read_access:
-            abort(403)
+            logger.info('Getting Assay %s for %s', filename, study_id)
+            # check for access rights
+            is_curator, read_access, write_access, obfuscation_code, study_location, release_date, submission_date, \
+                study_status = wsc.get_permissions(study_id, user_token)
+            if not read_access:
+                abort(403)
 
-        isa_study, isa_inv, std_path = iac.get_isa_study(study_id, user_token, skip_load_tables=False,
-                                                         study_location=study_location)
+            isa_study, isa_inv, std_path = iac.get_isa_study(study_id, user_token, skip_load_tables=False,
+                                                             study_location=study_location)
 
-        obj_list = isa_study.assays
-        found = list()
-        if not filename:
-            found = obj_list
-        else:
-            assay = get_assay(obj_list, filename)
-            if assay:
-                found.append(assay)
-        if not found:
-            abort(404)
-        logger.info('Found %d assays', len(found))
+            obj_list = isa_study.assays
+            found = list()
+            if not filename:
+                found = obj_list
+            else:
+                assay = get_assay(obj_list, filename)
+                if assay:
+                    found.append(assay)
+            if not found:
+                abort(404)
+            logger.info('Found %d assays', len(found))
 
-        sch = AssaySchema(many=True)
-        if list_only:
-            sch = AssaySchema(only=('filename',), many=True)
-        return extended_response(data={'assays': sch.dump(found).data})
+            sch = AssaySchema(many=True)
+            if list_only:
+                sch = AssaySchema(only=('filename',), many=True)
+            return extended_response(data={'assays': sch.dump(found).data})
+        except Exception as e:
+            logger.error('Problem retrieving assay sheets: {0}'.format(e))
 
     @swagger.operation(
         summary='Add a new assay',
