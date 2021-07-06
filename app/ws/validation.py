@@ -525,7 +525,8 @@ class Validation(Resource):
 
         try:
             number_of_files = sum([len(files) for r, d, files in os.walk(study_location)])
-        except:
+        except Exception as e:
+            logger.warning("No files found: {0}".format(e))
             number_of_files = 0
 
         validation_files_limit = app.config.get('VALIDATION_FILES_LIMIT')
@@ -1241,7 +1242,6 @@ def get_files_in_sub_folders(study_location):
     folder_exclusion_list = app.config.get('FOLDER_EXCLUSION_LIST')
 
     for file_name in os.listdir(study_location):
-        # for file_name in file_list:
         if os.path.isdir(os.path.join(study_location, file_name)):
             fname, ext = os.path.splitext(file_name)
             ext = ext.lower()
@@ -1253,41 +1253,28 @@ def get_files_in_sub_folders(study_location):
                 if file_name.lower() not in folder_exclusion_list and file_name.lower() not in folder_list:
                     folder_list.append(file_name)
 
-    # file_folder_list = []
-    # for folder in folder_list:
-    #     full_folder = os.path.join(study_location, folder)
-    #     for file_name in os.listdir(full_folder):
-    #         file_folder = os.path.join(folder, file_name)
-    #         if file_folder not in file_folder_list:
-    #             file_folder_list.append(file_folder)
-
     return folder_list
 
 
 def validate_files(study_id, study_location, obfuscation_code, override_list, file_name_list,
                    val_section="files", log_category=error, static_validation_file=None):
+
+    # This is where your new validation 'rule' will surely live.
+
     validations = []
     assay_file_list = get_assay_file_list(study_location)
-    # folder_list = get_files_in_sub_folders(study_location)
     study_files, upload_files, upload_diff, upload_location, latest_update_time = \
         get_all_files_from_filesystem(study_id, obfuscation_code, study_location,
                                       directory=None, include_raw_data=True, validation_only=True,
                                       include_upload_folder=False, assay_file_list=assay_file_list,
                                       short_format=True, include_sub_dir=True,
                                       static_validation_file=static_validation_file)
-    # if folder_list:
-    #     for folder in folder_list:
-    #         study_files_sub, upload_files, upload_diff, upload_location = \
-    #             get_all_files_from_filesystem(study_id, obfuscation_code, study_location,
-    #                                           directory=folder, include_raw_data=True, validation_only=True,
-    #                                           include_upload_folder=False, assay_file_list=assay_file_list)
-    #
-    #         if study_files_sub:  # Adding files found in the first subfolder to the files in the (root) study folder
-    #             study_files.extend(study_files_sub)
+
 
     sample_cnt = 0
     raw_file_found = False
     derived_file_found = False
+    text_file_in_derived_folder = False
     compressed_found = False
     for file in study_files:
         file_name = file['file']
@@ -1297,9 +1284,11 @@ def validate_files(study_id, study_location, obfuscation_code, override_list, fi
         isa_tab_warning = False
 
         full_file_name = os.path.join(study_location, file_name)
+        logger.debug("Full filename: {0} | File type: {1} | File status: {2} ".format(file_name, file_type, file_status))
 
         # Don't check our internal folders
         if 'audit' not in file_name and not file_name.startswith('chebi_pipeline_annotations'):
+            # If this filename is in fact a directory, find all the files in this directory, and iterate over them.
             if os.path.isdir(os.path.join(full_file_name)):
                 for sub_file_name in os.listdir(full_file_name):
                     if is_empty_file(os.path.join(full_file_name, sub_file_name), study_location=study_location):
@@ -1312,6 +1301,9 @@ def validate_files(study_id, study_location, obfuscation_code, override_list, fi
                                 "Sub-directory " + file_name + " contains ISA-Tab metadata documents",
                                 warning, val_section, value=file_name, val_sequence=2, log_category=log_category)
                         isa_tab_warning = True
+
+                    if file_name.startswith("DERIVED") and sub_file_name.endswith(".txt"):
+                        text_file_in_derived_folder = True
 
             if is_empty_file(full_file_name, study_location=study_location):
                 # if '/' in file_name and file_name.split("/")[1].lower() not in empty_exclusion_list:  # In case the file is in a folder
@@ -1360,6 +1352,8 @@ def validate_files(study_id, study_location, obfuscation_code, override_list, fi
 
         if file_type == 'derived':
             derived_file_found = True
+            if file_name.endswith(".txt"):
+                text_file_in_derived_folder = True
 
         if file_type == 'compressed':
             compressed_found = True
@@ -1377,12 +1371,19 @@ def validate_files(study_id, study_location, obfuscation_code, override_list, fi
         add_msg(validations, val_section, "No raw files found, but there are derived files", warning, val_section,
                 value="", descr="Ideally you should provide both raw and derived files",
                 val_sequence=8, log_category=log_category)
+        if text_file_in_derived_folder:
+            add_msg(validations, val_section, "A text file is only permitted in the derived files folder if a valid"
+                                              " raw file is present.", error, val_section, value="",
+                    descr="Text files should accompany a valid raw file. If your raw file isn't one of the following "
+                          "filetypes it is not acceptable: .RAW, .raw, .wiff, .scan, .wiff.scan, .d, .idb, .cdf, .dat,"
+                          " .cmp, .cdf.cmp, .lcd, .abf, .jbf, .xps, .peg", val_sequence=9, log_category=log_category)
     elif not derived_file_found:
         add_msg(validations, val_section, "No derived files found", warning, val_section,
-                value="", val_sequence=9, log_category=log_category)
+                value="", val_sequence=10, log_category=log_category)
     elif not raw_file_found:
         add_msg(validations, val_section, "No raw files found", error, val_section,
-                value="", val_sequence=10, log_category=log_category)
+                value="", val_sequence=11, log_category=log_category)
+
 
     return return_validations(val_section, validations, override_list)
 
