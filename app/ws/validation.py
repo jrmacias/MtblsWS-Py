@@ -523,7 +523,6 @@ class Validation(Resource):
         val_sections = "all", "isa-tab", "publication", "protocols", "people", "samples", "assays", "maf", "files"
         if section is None or section not in val_sections:
             section = 'all'
-
         try:
             number_of_files = sum([len(files) for r, d, files in os.walk(study_location)])
         except Exception as e:
@@ -531,6 +530,8 @@ class Validation(Resource):
             number_of_files = 0
 
         validation_files_limit = app.config.get('VALIDATION_FILES_LIMIT')
+        logger.info("request parameters: section: {0} / log_category {1} / val files limit {2}".format(section, log_category, validation_files_limit))
+
         force_static_validation = False
 
         # We can only use the static validation file when all values are used. MOE uses 'all' as default
