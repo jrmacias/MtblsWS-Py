@@ -495,6 +495,7 @@ class Validation(Resource):
             abort(401)
 
         study_id = study_id.upper()
+        logger.info('Starting validation for study {0}'.format(study_id))
 
         # param validation
         is_curator, read_access, write_access, obfuscation_code, study_location, release_date, submission_date, \
@@ -1379,7 +1380,7 @@ def validate_files(study_id, study_location, obfuscation_code, override_list, fi
                           "filetypes it is not acceptable: .RAW, .raw, .wiff, .scan, .wiff.scan, .d, .idb, .cdf, .dat,"
                           " .cmp, .cdf.cmp, .lcd, .abf, .jbf, .xps, .peg", val_sequence=9, log_category=log_category)
     elif not derived_file_found:
-        add_msg(validations, val_section, "No derived files found", warning, val_section,
+        add_msg(validations, val_section, "No derived files found at all.", warning, val_section,
                 value="", val_sequence=10, log_category=log_category)
     elif not raw_file_found:
         add_msg(validations, val_section, "No raw files found", error, val_section,
