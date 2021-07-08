@@ -1387,7 +1387,7 @@ def validate_files(study_id, study_location, obfuscation_code, override_list, fi
         add_msg(validations, val_section, "No raw files found", error, val_section,
                 value="", val_sequence=11, log_category=log_category)
 
-
+    logger.debug("text file found: {0}".format(text_file_in_derived_folder))
     return return_validations(val_section, validations, override_list)
 
 
