@@ -1261,6 +1261,7 @@ def validate_files(study_id, study_location, obfuscation_code, override_list, fi
 
     # This is where your new validation 'rule' will surely live.
 
+    logger.info('Starting validation for study {0}'.format(study_id))
     validations = []
     assay_file_list = get_assay_file_list(study_location)
     study_files, upload_files, upload_diff, upload_location, latest_update_time = \
